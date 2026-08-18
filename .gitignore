@@ -1,0 +1,92 @@
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+*.whl
+
+# ========================
+# Virtual Environments
+# ========================
+.venv/
+venv/
+ENV/
+env/
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# Training Checkpoints
+# ========================
+checkpoints/
+metrics/
+*.pt
+*.pth
+
+# ========================
+# Database & Data
+# ========================
+*.sqlite3
+*.db
+data/processed/
+data/qdrant/
+data/raw/
+
+# ========================
+# Frontend / Node.js
+# ========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
+
+# ========================
+# IDE & Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# Testing / Pytest
+# ========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ========================
+# Temporary / Test Files
+# ========================
+temp_*.py
+test_*.py
+backend-dev.log
+frontend-dev.log
+training_run.log
+install.ps1
