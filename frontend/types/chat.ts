@@ -1,3 +1,9 @@
+export type WebSource = {
+  title: string;
+  url: string;
+  source: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
@@ -7,6 +13,7 @@ export type ChatMessage = {
   table?: string | null;
   plan?: Record<string, unknown> | null;
   result?: Record<string, unknown> | null;
+  sources?: WebSource[] | null;
 };
 
 export type Conversation = {
@@ -25,6 +32,7 @@ export type ChatResponse = {
   conversation_id?: string;
   llm?: string;
   llm_used?: boolean;
+  sources?: WebSource[] | null;
 };
 
 export type HistoryResponse = {

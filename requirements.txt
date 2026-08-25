@@ -9,3 +9,4 @@ psycopg[binary]>=3.2.0
 pydantic>=2.7.0
 python-dotenv>=1.0.1
 qdrant-client>=1.9.0
+ddgs>=6.0.0

@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backend.chat_history import ChatHistoryStore
 from backend.orchestrator import ChatOrchestrator
+from database.adapter import get_adapter, list_supported_adapters
 from database.connector import DatabaseConnector
 from database.schema import SchemaInspector
 from database.tools import DatabaseToolRegistry
@@ -91,6 +92,7 @@ def model_status() -> Dict[str, Any]:
         "status": "ready",
         "llm": "custom-gpt",
         "database": safe_db,
+        "adapters": list_supported_adapters(),
         "embedding": orchestrator.embedding_service.status(),
         "qdrant": orchestrator.knowledge_service.store.status(),
         "custom_llm_ready": orchestrator.custom_llm.ready,
@@ -133,6 +135,32 @@ def get_schema() -> Dict[str, Any]:
             for item in result["schemas"]
         ],
     }
+
+
+@app.post("/schema/refresh")
+def refresh_schema() -> Dict[str, Any]:
+    """Force re-discovery of the database schema (clears cache)."""
+    database = connector.get_database()
+    if database is None:
+        raise HTTPException(status_code=400, detail="No database is connected.")
+    # Invalidate orchestrator's cached schema
+    orchestrator.invalidate_schema_cache()
+    # Force fresh discovery
+    from backend.schema_catalog import load_schema_catalog_no_cache
+    schema = load_schema_catalog_no_cache(database)
+    return {
+        "status": "refreshed",
+        "database": schema.database_name,
+        "tables": len(schema.tables),
+        "columns": sum(len(t.columns) for t in schema.tables.values()),
+        "foreign_keys": len(schema.foreign_keys),
+    }
+
+
+@app.get("/adapters")
+def get_adapters() -> Dict[str, Any]:
+    """List all supported database adapters and their status."""
+    return {"adapters": list_supported_adapters()}
 
 
 @app.post("/query/count")
@@ -225,6 +253,7 @@ def chat(payload: ChatRequest) -> Dict[str, Any]:
                 "conversation_id": conversation_id,
                 "llm": "custom-gpt",
                 "llm_used": bool(result.get("llm_used")),
+                "sources": result.get("sources") or [],
             }
 
         # Ensure knowledge index exists for semantic questions.
@@ -242,6 +271,7 @@ def chat(payload: ChatRequest) -> Dict[str, Any]:
             "conversation_id": conversation_id,
             "llm": "custom-gpt",
             "llm_used": bool(result.get("llm_used")),
+            "sources": result.get("sources") or [],
         }
         history_store.add_message(
             conversation_id=conversation_id,

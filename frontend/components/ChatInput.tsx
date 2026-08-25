@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+
 type ChatInputProps = {
   value: string;
   onChange: (value: string) => void;
@@ -6,6 +10,8 @@ type ChatInputProps = {
 };
 
 export function ChatInput({ value, onChange, onSend, disabled = false }: ChatInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -15,26 +21,53 @@ export function ChatInput({ value, onChange, onSend, disabled = false }: ChatInp
     }
   };
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [value]);
+
   return (
-    <div className="border-t border-slate-800 bg-slate-950/90 p-3 backdrop-blur-sm">
-      <div className="flex items-end gap-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-2 shadow-glow">
+    <div className="flex justify-center px-4 pb-6 pt-2">
+      <div className="flex w-full max-w-[768px] items-end rounded-2xl bg-[#303030] p-2 shadow-lg">
         <textarea
-          aria-label="Ask about trading or your database"
+          ref={textareaRef}
+          aria-label="Message input"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={disabled}
-          placeholder="Ask about trading, stocks, forex, crypto, or your database..."
-          className="max-h-32 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed"
+          placeholder="Message ChatGPT..."
+          className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-[#ececec] placeholder:text-[#666666] focus:outline-none disabled:cursor-not-allowed"
         />
         <button
           type="button"
           onClick={onSend}
           disabled={disabled || !value.trim()}
-          className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-30"
+          style={{
+            backgroundColor: value.trim() ? '#10a37f' : '#666666',
+          }}
         >
-          {disabled ? 'Sending...' : 'Send'}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M7 11L12 6L17 11M12 18V7"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </div>
     </div>

@@ -47,25 +47,16 @@ class CuratedAnswerStore:
         re.MULTILINE | re.DOTALL,
     )
     _STOP_WORDS: Set[str] = {
-        "a",
-        "an",
-        "and",
-        "are",
-        "can",
-        "do",
-        "for",
-        "how",
-        "is",
-        "it",
-        "me",
-        "of",
-        "please",
-        "tell",
-        "the",
-        "to",
-        "what",
-        "who",
-        "you",
+        # English stop words
+        "a", "an", "and", "are", "can", "do", "for", "how",
+        "is", "it", "me", "of", "please", "tell", "the", "to",
+        "what", "who", "you",
+        # Hindi/Hinglish stop words
+        "kya", "hai", "ka", "ke", "ki", "ko", "mein", "se",
+        "aur", "bhi", "ya", "nahi", "ho", "ye", "wo", "yeh",
+        "woh", "kaise", "kyun", "kab", "kaun", "kon",
+        "mujhe", "aap", "main", "tu", "tum",
+        "ek", "do", "ye", "woh",
     }
 
     def __init__(self, root: Path) -> None:
@@ -141,13 +132,13 @@ class CuratedAnswerStore:
             overlap = len(requested_terms & candidate_terms)
             if not overlap:
                 continue
-            # A single distinctive term such as "qdrant" or "embedding" is
-            # sufficient.  Multi-term questions need a strong overlap so an
-            # unrelated generic corpus response is never selected.
+            # For short queries, a single distinctive term match is enough.
+            # For longer queries, require stronger overlap.
             coverage = overlap / len(requested_terms)
             precision = overlap / len(candidate_terms)
             score = (coverage * 0.7) + (precision * 0.3)
-            if coverage >= 0.75 and score > best_score:
+            min_coverage = 0.3 if len(requested_terms) <= 3 else 0.5
+            if coverage >= min_coverage and score > best_score:
                 best = item
                 best_score = score
         return best
@@ -256,9 +247,18 @@ class CustomLLMService:
         cleaned = (text or "").strip()
         if not (12 <= len(cleaned) <= 220):
             return False
+        # Case-insensitive check for training format artifacts.
+        # The tiny model often generates raw "User: ... Assistant: ..." pairs.
         lowered = cleaned.lower()
-        banned = ("user:", "assistant:", "question:", "context:", "answer:", "draft:")
+        banned = (
+            "user:", "assistant:", "question:", "context:",
+            "answer:", "draft:", "user:", "system:",
+        )
         if any(token in lowered for token in banned):
+            return False
+        # Also reject if text contains the User:/Assistant: pattern
+        # (even with different capitalization).
+        if re.search(r"\buser\s*:", lowered) or re.search(r"\bassistant\s*:", lowered):
             return False
         words = re.findall(r"[A-Za-z]{2,}", cleaned)
         if len(words) < 3:
@@ -304,7 +304,19 @@ class CustomLLMService:
         if context:
             prompt = f"{context.strip()}\n{prompt}"
 
+        # For follow-ups, first check if the follow-up itself has a curated answer
+        # (e.g., "Iska simple example do" should match the example entry directly)
         if previous_message and self._is_follow_up(message):
+            followup_curated = self.curated_answers.find(message)
+            if followup_curated:
+                return {
+                    "answer": followup_curated.answer,
+                    "llm_used": False,
+                    "fallback": False,
+                    "prompt": prompt,
+                    "source": followup_curated.source,
+                }
+            # Fall back to continuation from previous topic
             continued = self.curated_answers.continuation_for(previous_message)
             if continued:
                 return {
@@ -327,19 +339,21 @@ class CustomLLMService:
 
         lowered = message.lower().strip()
         greeting = any(token in lowered for token in ("hello", "hi", "hey", "how are you"))
-        if greeting:
+        # Hindi greetings
+        hindi_greeting = any(token in lowered for token in ("namaste", "aap kaise ho", "kya haal hai", "kaise ho"))
+        if greeting or hindi_greeting:
             deterministic = (
-                "Hello! I'm your trading and database assistant. "
-                "Ask about stocks, forex, crypto, options, risk management, or company data."
+                "Hello! I'm your AI assistant. I can help with questions about technology, "
+                "AI, programming, trading, and almost any general topic. What would you like to talk about?"
             )
         elif "thank" in lowered:
-            deterministic = "You're welcome. Ask me about trading concepts or your database anytime."
+            deterministic = "You're welcome! Let me know if you have any other questions."
         elif any(token in lowered for token in ("bye", "goodbye")):
-            deterministic = "Goodbye! I'm here whenever you need trading insights or database answers."
+            deterministic = "Goodbye! Have a great day. I'm here whenever you need help."
         else:
             deterministic = (
-                "I can help with trading questions (7700+ topics), general conversation, "
-                "company knowledge retrieval, and live PostgreSQL analytics."
+                "I can help with a wide range of topics including technology, AI, programming, "
+                "general knowledge, and more. Feel free to ask me anything!"
             )
 
         # The generator emits exactly max_new_tokens character tokens and has no
