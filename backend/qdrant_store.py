@@ -65,13 +65,17 @@ class QdrantStore:
         return True
 
     def _connect_with_fallback(self) -> QdrantClient:
-        client = QdrantClient(
-            url=self.url,
-            api_key=self.api_key,
-            timeout=60,
-            check_compatibility=False,
-            verify=self.tls_verify,
-        )
+        try:
+            client = QdrantClient(
+                url=self.url,
+                api_key=self.api_key,
+                timeout=60,
+                check_compatibility=False,
+                verify=self.tls_verify,
+            )
+        except Exception as exc:
+            print(f"Qdrant connection failed: {exc}")
+            raise
         if self.tls_verify and (os.getenv("QDRANT_TLS_VERIFY") or "auto").strip().lower() == "auto":
             try:
                 client.get_collections()
@@ -114,13 +118,17 @@ class QdrantStore:
         )
 
     def reset_collection(self) -> None:
-        names = {c.name for c in self.client.get_collections().collections}
-        if self.collection_name in names:
-            self.client.delete_collection(self.collection_name)
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=qmodels.VectorParams(size=self.vector_size, distance=qmodels.Distance.COSINE),
-        )
+        try:
+            names = {c.name for c in self.client.get_collections().collections}
+            if self.collection_name in names:
+                self.client.delete_collection(self.collection_name)
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=qmodels.VectorParams(size=self.vector_size, distance=qmodels.Distance.COSINE),
+            )
+        except Exception as exc:
+            print(f"Qdrant reset_collection failed: {exc}")
+            raise
 
     @staticmethod
     def _point_id(doc_id: str) -> str:
@@ -147,8 +155,12 @@ class QdrantStore:
                     payload=payload,
                 )
             )
-        if points:
-            self.client.upsert(collection_name=self.collection_name, points=points, wait=True)
+        try:
+            if points:
+                self.client.upsert(collection_name=self.collection_name, points=points, wait=True)
+        except Exception as exc:
+            print(f"Qdrant upsert failed: {exc}")
+            raise
         return len(points)
 
     def search(
@@ -157,13 +169,17 @@ class QdrantStore:
         limit: int = 5,
         score_threshold: Optional[float] = 0.05,
     ) -> List[Dict[str, Any]]:
-        response = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_vector,
-            limit=limit,
-            with_payload=True,
-            score_threshold=score_threshold,
-        )
+        try:
+            response = self.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                limit=limit,
+                with_payload=True,
+                score_threshold=score_threshold,
+            )
+        except Exception as exc:
+            print(f"Qdrant search failed: {exc}")
+            return []
         hits = getattr(response, "points", None) or response
         results = []
         for hit in hits:
@@ -181,8 +197,12 @@ class QdrantStore:
         return results
 
     def count(self) -> int:
-        info = self.client.get_collection(self.collection_name)
-        return int(info.points_count or 0)
+        try:
+            info = self.client.get_collection(self.collection_name)
+            return int(info.points_count or 0)
+        except Exception as exc:
+            print(f"Qdrant count failed: {exc}")
+            return 0
 
     def ping(self) -> Dict[str, Any]:
         collections = [c.name for c in self.client.get_collections().collections]

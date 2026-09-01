@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Message } from '@/contexts/ChatContext';
 import { useChat } from '@/contexts/ChatContext';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
@@ -14,26 +13,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-    >
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-4 px-4 py-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* Avatar */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1, type: 'spring', damping: 15 }}
-          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
-            isUser
-              ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-              : theme === 'light'
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
-                : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 pulse-ring'
-          }`}
-        >
+        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
+          isUser
+            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+            : theme === 'light'
+              ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
+              : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40'
+        }`}>
           {isUser ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -44,7 +33,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
-        </motion.div>
+        </div>
 
         {/* Message content */}
         <div className={`max-w-[700px] min-w-0 ${isUser ? 'text-right' : 'text-left'}`}>
@@ -58,17 +47,15 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </div>
 
           {/* Message bubble */}
-          <div
-            className={`rounded-2xl px-5 py-4 ${
-              isUser
-                ? theme === 'light'
-                  ? 'bg-indigo-100 border border-indigo-200'
-                  : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20'
-                : theme === 'light'
-                  ? 'bg-white border border-slate-200 shadow-sm'
-                  : 'glass border border-white/5'
-            }`}
-          >
+          <div className={`rounded-2xl px-5 py-4 transition-all duration-150 ${
+            isUser
+              ? theme === 'light'
+                ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border border-indigo-200 shadow-md hover:shadow-lg'
+                : 'bg-gradient-to-br from-indigo-500/25 to-purple-500/25 border border-indigo-500/30 shadow-lg hover:shadow-xl hover:border-indigo-500/40'
+              : theme === 'light'
+                ? 'bg-gradient-to-br from-white to-slate-50 border border-slate-200 shadow-md hover:shadow-lg'
+                : 'glass border border-white/10 shadow-xl hover:shadow-2xl hover:border-white/15'
+          }`}>
             <div className={`whitespace-pre-wrap leading-[1.7] ${
               isUser
                 ? theme === 'light' ? 'text-slate-800' : 'text-slate-200'
@@ -84,16 +71,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
           {/* Sources */}
           {!isUser && message.sources && message.sources.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className={`mt-3 overflow-hidden rounded-xl border ${
-                theme === 'light'
-                  ? 'border-slate-200 bg-slate-50'
-                  : 'border-white/5 bg-white/5'
-              }`}
-            >
+            <div className={`mt-3 overflow-hidden rounded-xl border transition-all duration-150 ${
+              theme === 'light'
+                ? 'border-slate-200 bg-slate-50 shadow-md hover:shadow-lg'
+                : 'border-white/5 bg-white/5 shadow-lg hover:shadow-xl'
+            }`}>
               <div className={`border-b px-4 py-2 ${
                 theme === 'light' ? 'border-slate-200' : 'border-white/5'
               }`}>
@@ -123,7 +105,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   </a>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Timestamp */}
@@ -136,6 +118,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

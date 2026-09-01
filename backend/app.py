@@ -286,10 +286,15 @@ def chat(payload: ChatRequest) -> Dict[str, Any]:
         return response
     except Exception as exc:
         print(f"/chat failed: {type(exc).__name__}: {exc}")
-        answer = _ensure_answer(
-            f"I could not answer that question because of an internal error: {exc}",
-            fallback,
-        )
+        # Provide a user-friendly error message instead of exposing internal details
+        error_msg = str(exc).lower()
+        if "errno 10054" in error_msg or "forcibly closed" in error_msg:
+            friendly = "I'm having trouble connecting to the knowledge base right now. Please try again in a moment."
+        elif "qdrant" in error_msg or "connection refused" in error_msg:
+            friendly = "The knowledge service is temporarily unavailable. I can still help with general questions!"
+        else:
+            friendly = f"I encountered an issue processing that request. Please try again."
+        answer = _ensure_answer(friendly, fallback)
         history_store.add_message(
             conversation_id=conversation_id,
             role="assistant",

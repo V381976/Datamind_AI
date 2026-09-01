@@ -106,9 +106,17 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   // Theme state - persisted to localStorage
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => 
-    loadFromStorage<'dark' | 'light'>('datamind_theme', 'dark')
-  );
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    // Apply theme immediately to prevent flash
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('datamind_theme');
+      const initialTheme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+      document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+      document.documentElement.classList.toggle('light', initialTheme === 'light');
+      return initialTheme;
+    }
+    return 'dark';
+  });
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true);

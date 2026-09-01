@@ -17,7 +17,15 @@ class KnowledgeService:
 
     def __init__(self, embedding_service: EmbeddingService, store: Optional[QdrantStore] = None) -> None:
         self.embedding_service = embedding_service
-        self.store = store or QdrantStore(vector_size=embedding_service.vector_size)
+        if store is not None:
+            self.store = store
+        else:
+            try:
+                self.store = QdrantStore(vector_size=embedding_service.vector_size)
+            except Exception as exc:
+                print(f"Warning: Qdrant store initialization failed: {exc}")
+                print("Knowledge retrieval will be disabled. Chat will still work with curated answers.")
+                self.store = None
         self._indexed = False
 
     @staticmethod
@@ -239,6 +247,8 @@ class KnowledgeService:
         return docs
 
     def index_database(self, connection, schema: Optional[DatabaseSchema] = None, force: bool = False) -> Dict[str, Any]:
+        if self.store is None:
+            return {"indexed": False, "points": 0, "reason": "qdrant_unavailable"}
         if self._indexed and not force and self.store.count() > 0:
             return {"indexed": False, "points": self.store.count(), "reason": "already_indexed"}
         documents = self.build_documents_from_database(connection, schema=schema)
@@ -257,6 +267,8 @@ class KnowledgeService:
         This allows the knowledge/retrieval system to work even when no
         database is connected.
         """
+        if self.store is None:
+            return {"indexed": False, "points": 0, "reason": "qdrant_unavailable"}
         if self._indexed and not force and self.store.count() > 0:
             return {"indexed": False, "points": self.store.count(), "reason": "already_indexed"}
         documents = self._load_raw_knowledge_files()
@@ -270,6 +282,8 @@ class KnowledgeService:
         return {"indexed": True, "points": count}
 
     def retrieve(self, question: str, limit: int = 5) -> List[Dict[str, Any]]:
+        if self.store is None:
+            return []
         vector = self.embedding_service.embed_question(question)
         hits = self.store.search(vector, limit=max(limit * 3, 9))
 
@@ -342,4 +356,6 @@ class KnowledgeService:
         return cleaned
 
     def reindex(self, connection, schema: Optional[DatabaseSchema] = None) -> Dict[str, Any]:
+        if self.store is None:
+            return {"indexed": False, "points": 0, "reason": "qdrant_unavailable"}
         return self.index_database(connection, schema=schema, force=True)

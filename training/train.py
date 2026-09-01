@@ -23,12 +23,13 @@ from config import DEFAULT_CONFIG
 from model.config import GPTConfig
 from model.gpt import GPTModel
 from tokenizer.tokenizer import CharTokenizer
+from tokenizer.bpe_tokenizer import BPETokenizer
 from training.dataset import TextDatasetPipeline
 from utils.helpers import count_parameters, detect_hardware, ensure_directory, save_checkpoint, load_checkpoint
 
 
 class TextDataset(torch.utils.data.Dataset):
-    def __init__(self, text: str, block_size: int, tokenizer: CharTokenizer) -> None:
+    def __init__(self, text: str, block_size: int, tokenizer) -> None:
         self.block_size = block_size
         self.tokenizer = tokenizer
         self.tokens = tokenizer.encode(text)
@@ -137,7 +138,7 @@ EVAL_PROMPTS: Dict[str, str] = {
 
 def generate_monitor_sample(
     model: GPTModel,
-    tokenizer: CharTokenizer,
+    tokenizer,
     prompt: str = "User: What is your name?\nAssistant:",
     max_new_tokens: int = 48,
 ) -> str:
@@ -164,7 +165,7 @@ def generate_monitor_sample(
 
 def generate_eval_samples(
     model: GPTModel,
-    tokenizer: CharTokenizer,
+    tokenizer,
     max_new_tokens: int = 48,
 ) -> Dict[str, str]:
     samples: Dict[str, str] = {}
@@ -181,7 +182,7 @@ def generate_eval_samples(
 def train_model(
     train_text: str,
     val_text: str,
-    tokenizer: CharTokenizer,
+    tokenizer,
     config: GPTConfig,
     learning_rate: float = 3e-4,
     batch_size: int = 8,
@@ -475,9 +476,30 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--eval-interval", type=int, default=250)
+    parser.add_argument("--tokenizer", type=str, default="char", choices=["char", "bpe"],
+                        help="Tokenizer to use: 'char' (256 vocab) or 'bpe' (4000 vocab)")
     args = parser.parse_args()
 
-    tokenizer = CharTokenizer()
+    if args.tokenizer == "bpe":
+        bpe_dir = Path("tokenizer/bpe_vocab")
+        if not (bpe_dir / "tokenizer.json").exists():
+            print("Error: BPE tokenizer not found. Run: python -m tokenizer.train_bpe")
+            return
+        tokenizer = BPETokenizer.load(bpe_dir)
+        print(f"Loaded BPE tokenizer: vocab_size={tokenizer.vocab_size}")
+    else:
+        tokenizer = CharTokenizer()
+
+    # BPE uses a larger model (8 layers, 8 heads, 512 embedding) for better quality
+    if args.tokenizer == "bpe":
+        model_embedding_dim = 512
+        model_n_heads = 8
+        model_n_layers = 8
+        print(f"BPE model config: layers={model_n_layers}, heads={model_n_heads}, emb={model_embedding_dim}")
+    else:
+        model_embedding_dim = DEFAULT_CONFIG.embedding_dim
+        model_n_heads = DEFAULT_CONFIG.n_heads
+        model_n_layers = DEFAULT_CONFIG.n_layers
     try:
         train_text, val_text = load_processed_splits("data/processed")
     except (FileNotFoundError, RuntimeError) as exc:
@@ -509,9 +531,9 @@ def main() -> None:
     config = GPTConfig(
         vocab_size=tokenizer.vocab_size,
         block_size=DEFAULT_CONFIG.block_size,
-        embedding_dim=DEFAULT_CONFIG.embedding_dim,
-        n_heads=DEFAULT_CONFIG.n_heads,
-        n_layers=DEFAULT_CONFIG.n_layers,
+        embedding_dim=model_embedding_dim,
+        n_heads=model_n_heads,
+        n_layers=model_n_layers,
         dropout=DEFAULT_CONFIG.dropout,
         device=hardware["device"],
     )
@@ -547,10 +569,10 @@ def main() -> None:
         batch_size=args.batch_size,
         train_steps=args.train_steps,
         eval_interval=args.eval_interval,
-        checkpoint_dir="checkpoints",
-        metrics_dir="metrics",
+        checkpoint_dir="checkpoints_bpe" if args.tokenizer == "bpe" else "checkpoints",
+        metrics_dir="metrics_bpe" if args.tokenizer == "bpe" else "metrics",
         device=torch.device(hardware["device"]),
-        resume_from=resume_path if use_resume else None,
+        resume_from=None if args.fresh else ("checkpoints_bpe/checkpoint_latest.pt" if args.tokenizer == "bpe" else resume_path if use_resume else None),
         max_eval_batches=64,
         sample_interval=args.eval_interval,
     )

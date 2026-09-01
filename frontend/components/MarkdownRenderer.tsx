@@ -4,7 +4,6 @@ import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { motion } from 'framer-motion';
 
 // Custom hook for theme
 function useTheme() {
@@ -87,40 +86,34 @@ function MarkdownComponents({ theme }: { theme: string }) {
   return {
     // Headings
     h1: ({ children, ...props }: any) => (
-      <motion.h1
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <h1
         className={`mt-8 mb-4 text-2xl font-bold ${
           theme === 'light' ? 'text-slate-900' : 'text-white'
         }`}
         {...props}
       >
         {children}
-      </motion.h1>
+      </h1>
     ),
     h2: ({ children, ...props }: any) => (
-      <motion.h2
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <h2
         className={`mt-6 mb-3 text-xl font-bold ${
           theme === 'light' ? 'text-slate-800' : 'text-white'
         }`}
         {...props}
       >
         {children}
-      </motion.h2>
+      </h2>
     ),
     h3: ({ children, ...props }: any) => (
-      <motion.h3
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <h3
         className={`mt-5 mb-2 text-lg font-semibold ${
           theme === 'light' ? 'text-slate-800' : 'text-white'
         }`}
         {...props}
       >
         {children}
-      </motion.h3>
+      </h3>
     ),
     h4: ({ children, ...props }: any) => (
       <h4
@@ -191,15 +184,11 @@ function MarkdownComponents({ theme }: { theme: string }) {
       const code = typeof codeElement === 'string' ? codeElement : String(codeElement || '');
 
       return (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`my-4 overflow-hidden rounded-xl border ${
-            theme === 'light'
-              ? 'border-slate-200 bg-slate-50'
-              : 'border-white/10 bg-[#0d1117]'
-          }`}
-        >
+        <div className={`my-4 overflow-hidden rounded-xl border ${
+          theme === 'light'
+            ? 'border-slate-200 bg-slate-50'
+            : 'border-white/10 bg-[#0d1117]'
+        }`}>
           {/* Code header */}
           <div className={`flex items-center justify-between border-b px-4 py-2 ${
             theme === 'light'
@@ -228,34 +217,30 @@ function MarkdownComponents({ theme }: { theme: string }) {
           }`} {...props}>
             {children}
           </pre>
-        </motion.div>
+        </div>
       );
     },
 
     // Lists
     ul: ({ children, ...props }: any) => (
-      <motion.ul
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <ul
         className={`mb-4 ml-6 list-disc space-y-2 ${
           theme === 'light' ? 'text-slate-700' : 'text-slate-300'
         }`}
         {...props}
       >
         {children}
-      </motion.ul>
+      </ul>
     ),
     ol: ({ children, ...props }: any) => (
-      <motion.ol
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <ol
         className={`mb-4 ml-6 list-decimal space-y-2 ${
           theme === 'light' ? 'text-slate-700' : 'text-slate-300'
         }`}
         {...props}
       >
         {children}
-      </motion.ol>
+      </ol>
     ),
     li: ({ children, ...props }: any) => (
       <li className="pl-2" {...props}>
@@ -289,11 +274,7 @@ function MarkdownComponents({ theme }: { theme: string }) {
       }
 
       return (
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          className={`my-4 rounded-xl border-l-4 p-4 ${colors}`}
-        >
+        <div className={`my-4 rounded-xl border-l-4 p-4 ${colors}`}>
           <div className="flex items-start gap-3">
             <span className="text-lg">{icon}</span>
             <div className={`flex-1 text-sm ${
@@ -302,7 +283,7 @@ function MarkdownComponents({ theme }: { theme: string }) {
               {children}
             </div>
           </div>
-        </motion.div>
+        </div>
       );
     },
 

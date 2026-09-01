@@ -32,16 +32,23 @@ class ChatOrchestrator:
         and database documents.  If no connection is available, indexes only
         the raw knowledge/training files so the system still works.
         """
-        if self._knowledge_ready and self.knowledge_service.store.count() > 0:
-            return {"ready": True, "points": self.knowledge_service.store.count()}
-        # Force rebuild once per process start so stale/training vectors are replaced.
-        if connection is not None:
-            schema = self._get_or_discover_schema(connection)
-            result = self.knowledge_service.index_database(connection, schema=schema, force=True)
-        else:
-            result = self.knowledge_service.index_knowledge_files(force=True)
-        self._knowledge_ready = bool(result.get("points", 0) > 0)
-        return result
+        try:
+            if self.knowledge_service.store is None:
+                return {"ready": False, "points": 0, "reason": "qdrant_unavailable"}
+            if self._knowledge_ready and self.knowledge_service.store.count() > 0:
+                return {"ready": True, "points": self.knowledge_service.store.count()}
+            # Force rebuild once per process start so stale/training vectors are replaced.
+            if connection is not None:
+                schema = self._get_or_discover_schema(connection)
+                result = self.knowledge_service.index_database(connection, schema=schema, force=True)
+            else:
+                result = self.knowledge_service.index_knowledge_files(force=True)
+            self._knowledge_ready = bool(result.get("points", 0) > 0)
+            return result
+        except Exception as exc:
+            print(f"ensure_knowledge_index failed (Qdrant may be unavailable): {exc}")
+            self._knowledge_ready = False
+            return {"ready": False, "points": 0, "error": str(exc)}
 
     def _get_or_discover_schema(self, connection) -> DatabaseSchema:
         """Get cached schema or discover fresh."""
@@ -264,9 +271,16 @@ class ChatOrchestrator:
 
     def _handle_knowledge(self, message: str, connection, history: List[Dict[str, Any]]) -> Dict[str, Any]:
         # Always ensure knowledge index (works with or without database)
-        self.ensure_knowledge_index(connection)
+        try:
+            self.ensure_knowledge_index(connection)
+        except Exception as exc:
+            print(f"_handle_knowledge: ensure_knowledge_index failed: {exc}")
         schema = self._get_or_discover_schema(connection)
-        hits = self.knowledge_service.retrieve(message, limit=5)
+        try:
+            hits = self.knowledge_service.retrieve(message, limit=5)
+        except Exception as exc:
+            print(f"_handle_knowledge: retrieve failed (Qdrant may be unavailable): {exc}")
+            hits = []
         draft = self.knowledge_service.answer_from_retrieval(message, hits)
 
         # Check if the retrieved answer is usable
@@ -395,13 +409,20 @@ class ChatOrchestrator:
             # For general questions, first try curated answers (fastest),
             # then try knowledge retrieval, then fall back to custom LLM.
             # This gives the best answers for questions covered in training data.
-            self.ensure_knowledge_index(connection)
+            try:
+                self.ensure_knowledge_index(connection)
+            except Exception as exc:
+                print(f"handle: ensure_knowledge_index failed: {exc}")
             general = self._handle_general(message, history)
             # If general handler got a curated answer (not fallback), use it
             if not general.get("result", {}).get("fallback"):
                 return general
             # If fallback, try knowledge retrieval for better answer
-            knowledge = self._handle_knowledge(message, connection, history)
+            try:
+                knowledge = self._handle_knowledge(message, connection, history)
+            except Exception as exc:
+                print(f"handle: knowledge fallback failed: {exc}")
+                return general
             # Use knowledge answer if it found something relevant
             if knowledge.get("result", {}).get("hits") and knowledge["answer"]:
                 knowledge["route"] = "knowledge"
@@ -410,16 +431,23 @@ class ChatOrchestrator:
         if route == "database":
             if connection is None:
                 # No database — route to knowledge instead
-                return self._handle_knowledge(message, connection, history)
+                try:
+                    return self._handle_knowledge(message, connection, history)
+                except Exception as exc:
+                    print(f"handle: database->knowledge fallback failed: {exc}")
+                    return self._handle_general(message, history)
             result = self._handle_database(message, connection, history)
             if result.get("unsupported"):
                 # Fallback to knowledge when planner cannot map the question.
-                knowledge = self._handle_knowledge(message, connection, history)
-                knowledge["answer"] = (
-                    f"{result['answer']} I also searched related knowledge. {knowledge['answer']}"
-                )
-                knowledge["route"] = "database+knowledge"
-                return knowledge
+                try:
+                    knowledge = self._handle_knowledge(message, connection, history)
+                    knowledge["answer"] = (
+                        f"{result['answer']} I also searched related knowledge. {knowledge['answer']}"
+                    )
+                    knowledge["route"] = "database+knowledge"
+                    return knowledge
+                except Exception as exc:
+                    print(f"handle: database+knowledge fallback failed: {exc}")
             return result
 
         # knowledge (default)
@@ -460,4 +488,8 @@ class ChatOrchestrator:
                 "retrieval": [],
             }
         # No curated answer — fall back to Qdrant retrieval
-        return self._handle_knowledge(message, connection, history)
+        try:
+            return self._handle_knowledge(message, connection, history)
+        except Exception as exc:
+            print(f"handle: knowledge fallback failed: {exc}")
+            return self._handle_general(message, history)

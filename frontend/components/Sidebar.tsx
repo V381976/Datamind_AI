@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useChat } from '@/contexts/ChatContext';
 
 export function Sidebar() {
@@ -57,26 +56,18 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{
-          x: sidebarOpen ? 0 : -280,
-        }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="glass fixed left-0 top-0 z-40 flex h-full w-[280px] flex-col border-r border-white/5"
+      <aside
+        className={`glass fixed left-0 top-0 z-40 flex h-full w-[280px] flex-col border-r border-white/10 shadow-2xl transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         {/* Logo & New Chat */}
         <div className="border-b border-white/5 p-4">
@@ -101,12 +92,10 @@ export function Sidebar() {
           </div>
 
           {/* New Chat Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={createNewChat}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-3 text-sm font-medium text-indigo-400 transition-all hover:from-indigo-500/20 hover:to-purple-500/20 hover:border-indigo-500/50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/15 to-purple-500/15 px-4 py-3 text-sm font-medium text-indigo-400 transition-all hover:from-indigo-500/25 hover:to-purple-500/25 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/20"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -155,12 +144,9 @@ export function Sidebar() {
                 const isEditing = editingId === conversation.id;
 
                 return (
-                  <motion.div
+                  <div
                     key={conversation.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`group relative rounded-xl transition-all duration-200 ${
+                    className={`group relative rounded-xl transition-all duration-150 ${
                       isActive
                         ? 'sidebar-active bg-indigo-500/10'
                         : 'hover:bg-white/5'
@@ -208,14 +194,8 @@ export function Sidebar() {
                         </div>
 
                         {/* Action buttons */}
-                        <AnimatePresence>
-                          {hoveredId === conversation.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              className="flex items-center gap-1"
-                            >
+                        {hoveredId === conversation.id && (
+                          <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -243,12 +223,12 @@ export function Sidebar() {
                                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
-                            </motion.div>
+                            </div>
                           )}
-                        </AnimatePresence>
+                        </div>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -258,9 +238,7 @@ export function Sidebar() {
         {/* Footer */}
         <div className="border-t border-white/5 p-4">
           {/* Theme Toggle */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={toggleTheme}
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white"
@@ -276,7 +254,7 @@ export function Sidebar() {
               </svg>
             )}
             {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </motion.button>
+          </button>
 
           {/* User section */}
           <div className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:bg-white/5">
@@ -290,7 +268,7 @@ export function Sidebar() {
             <div className="h-2 w-2 rounded-full bg-green-400" />
           </div>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 }

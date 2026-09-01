@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useChat } from '@/contexts/ChatContext';
 
 export function TopBar() {
@@ -59,13 +58,11 @@ export function TopBar() {
   const models = ['MyModel-v1', 'MyModel-v2-fast', 'MyModel-v2-accurate'];
 
   return (
-    <header className="glass fixed left-0 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/5 px-4">
+    <header className="glass fixed left-0 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 px-4 shadow-lg">
       {/* Left side */}
       <div className="flex items-center gap-4">
         {/* Sidebar toggle */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           type="button"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
@@ -94,7 +91,7 @@ export function TopBar() {
             className="rounded-lg border border-indigo-500/30 bg-white/5 px-3 py-1.5 text-base font-semibold text-white focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
           />
         ) : (
-          <motion.button
+          <button
             type="button"
             onClick={startEditing}
             className="group flex items-center gap-2 text-base font-semibold text-slate-300 transition-colors hover:text-white"
@@ -118,9 +115,7 @@ export function TopBar() {
       <div className="flex items-center gap-3">
         {/* Model selector */}
         <div className="relative" ref={dropdownRef}>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={() => setShowModelDropdown(!showModelDropdown)}
             className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-indigo-500/30 hover:bg-indigo-500/10"
@@ -132,15 +127,8 @@ export function TopBar() {
             </svg>
           </motion.button>
 
-          <AnimatePresence>
-            {showModelDropdown && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="glass absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-white/10 shadow-xl"
-              >
+          {showModelDropdown && (
+            <div className="glass absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-white/10 shadow-xl">
                 <div className="p-2">
                   {models.map((model) => (
                     <button
@@ -168,15 +156,13 @@ export function TopBar() {
                     </button>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
 
         {/* Settings button */}
-        <motion.button
-          whileHover={{ scale: 1.05, rotate: 30 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           type="button"
           onClick={() => setShowSettings(true)}
           className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
@@ -186,7 +172,7 @@ export function TopBar() {
             <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </motion.button>
+        </button>
       </div>
     </header>
   );

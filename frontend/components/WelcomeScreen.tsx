@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useChat } from '@/contexts/ChatContext';
 
 export function WelcomeScreen() {
@@ -61,14 +60,9 @@ export function WelcomeScreen() {
 
   return (
     <div className="flex h-full flex-col items-center justify-center px-4">
-      {/* Animated Logo */}
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', damping: 15, delay: 0.1 }}
-        className="mb-8 relative"
-      >
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-xl shadow-indigo-500/30">
+      {/* Logo */}
+      <div className="mb-8 relative">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-2xl shadow-indigo-500/40 glow-purple">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
@@ -79,49 +73,28 @@ export function WelcomeScreen() {
             />
           </svg>
         </div>
-        {/* Floating dots */}
-        <motion.div
-          animate={{ y: [-5, 5, -5] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="absolute -right-2 -top-2 h-4 w-4 rounded-full bg-cyan-400"
-        />
-        <motion.div
-          animate={{ y: [5, -5, 5] }}
-          transition={{ duration: 4, repeat: Infinity }}
-          className="absolute -bottom-2 -left-2 h-3 w-3 rounded-full bg-pink-400"
-        />
-      </motion.div>
+      </div>
 
       {/* Greeting */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-center"
-      >
+      <div className="text-center">
         <h2 className="mb-3 text-3xl font-bold gradient-text">
           How can I help you today?
         </h2>
         <p className="mb-10 text-slate-500">
           Ask me anything about technology, AI, programming, or general knowledge.
         </p>
-      </motion.div>
+      </div>
 
       {/* Suggestion cards */}
       <div className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
         {suggestions.map((suggestion, index) => (
-          <motion.button
+          <button
             key={suggestion.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
             type="button"
             onClick={() => sendMessage(suggestion.prompt)}
-            className={`welcome-card group flex items-start gap-4 rounded-2xl border bg-gradient-to-br p-5 text-left transition-all ${suggestion.gradient} ${suggestion.border}`}
+            className={`welcome-card group flex items-start gap-4 rounded-2xl border bg-gradient-to-br p-5 text-left transition-all shadow-lg hover:shadow-xl ${suggestion.gradient} ${suggestion.border}`}
           >
-            <div className={`flex-shrink-0 rounded-xl bg-white/5 p-2 ${suggestion.iconColor} transition-transform group-hover:scale-110`}>
+            <div className={`flex-shrink-0 rounded-xl bg-white/5 p-2 ${suggestion.iconColor} transition-transform duration-150 group-hover:scale-110`}>
               {suggestion.icon}
             </div>
             <div className="min-w-0">
@@ -132,19 +105,14 @@ export function WelcomeScreen() {
                 {suggestion.prompt}
               </div>
             </div>
-          </motion.button>
+          </button>
         ))}
       </div>
 
       {/* Bottom hint */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="mt-8 text-xs text-slate-600"
-      >
+      <p className="mt-8 text-xs text-slate-600">
         Powered by DataMind AI • Custom LLM
-      </motion.p>
+      </p>
     </div>
   );
 }
